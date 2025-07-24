@@ -118,6 +118,7 @@ Write-Host "`n[Step 5] Copying build artifact..." -ForegroundColor Cyan
 # Create output directory if it doesn't exist
 if (!(Test-Path $OutputDir)) {
     New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
+    Write-Host "Created output directory: $OutputDir" -ForegroundColor Green
 }
 
 if ($buildType -eq "apk") {
@@ -129,8 +130,22 @@ if ($buildType -eq "apk") {
 }
 
 if (Test-Path $artifactPath) {
-    Copy-Item -Path $artifactPath -Destination $outputFile -Force
-    Write-Host "Artifact copied to: $outputFile" -ForegroundColor Green
+    # Clean the specific destination before copying
+    if (Test-Path $outputFile) {
+        Write-Host "Cleaning existing destination: $outputFile" -ForegroundColor Yellow
+        Remove-Item -Path $outputFile -Recurse -Force
+    }
+    
+    # Copy artifact (handle both file and folder)
+    if ((Get-Item $artifactPath).PSIsContainer) {
+        # Source is a folder
+        Copy-Item -Path $artifactPath -Destination $outputFile -Recurse -Force
+        Write-Host "Artifact folder copied to: $outputFile" -ForegroundColor Green
+    } else {
+        # Source is a file
+        Copy-Item -Path $artifactPath -Destination $outputFile -Force
+        Write-Host "Artifact file copied to: $outputFile" -ForegroundColor Green
+    }
 } else {
     Write-Host "Warning: Build artifact not found at: $artifactPath" -ForegroundColor Yellow
 }

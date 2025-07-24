@@ -162,7 +162,10 @@ echo -e "${GREEN}Build completed successfully!${NC}"
 echo -e "\n${CYAN}[Step 5] Copying build artifact...${NC}"
 
 # Create output directory if it doesn't exist
-mkdir -p "$OUTPUT_DIR"
+if [[ ! -d "$OUTPUT_DIR" ]]; then
+    mkdir -p "$OUTPUT_DIR"
+    echo -e "${GREEN}Created output directory: $OUTPUT_DIR${NC}"
+fi
 
 if [[ "$build_type" == "apk" ]]; then
     artifact_path="$WORK_DIR/app/build/outputs"
@@ -172,9 +175,23 @@ else
     output_file="$OUTPUT_DIR/app-release-aab"
 fi
 
-if [[ -f "$artifact_path" ]]; then
-    cp "$artifact_path" "$output_file"
-    echo -e "${GREEN}Artifact copied to: $output_file${NC}"
+if [[ -e "$artifact_path" ]]; then
+    # Clean the specific destination before copying
+    if [[ -e "$output_file" ]]; then
+        echo -e "${YELLOW}Cleaning existing destination: $output_file${NC}"
+        rm -rf "$output_file"
+    fi
+    
+    # Copy artifact (handle both file and folder)
+    if [[ -d "$artifact_path" ]]; then
+        # Source is a folder
+        cp -r "$artifact_path" "$output_file"
+        echo -e "${GREEN}Artifact folder copied to: $output_file${NC}"
+    else
+        # Source is a file
+        cp "$artifact_path" "$output_file"
+        echo -e "${GREEN}Artifact file copied to: $output_file${NC}"
+    fi
 else
     echo -e "${YELLOW}Warning: Build artifact not found at: $artifact_path${NC}"
 fi
