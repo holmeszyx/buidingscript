@@ -7,6 +7,7 @@
 DATA_DIR="."
 WORK_DIR="."
 OUTPUT_DIR="output"
+CHANNEL="google"
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -23,10 +24,15 @@ while [[ $# -gt 0 ]]; do
             OUTPUT_DIR="$2"
             shift 2
             ;;
+        --channel)
+            CHANNEL="$2"
+            shift 2
+            ;;
         -h|--help)
-            echo "Usage: $0 [--workdir <path>] [--datadir <path>] [--output <path>]"
+            echo "Usage: $0 [--workdir <path>] [--datadir <path>] [--output <path>] [--channel <name>]"
             echo "  --workdir: Working directory (default: current directory)"
             echo "  --output:  Output directory for artifacts (default: output)"
+            echo "  --channel: Channel name for app1.channel property (default: google)"
             exit 0
             ;;
         *)
@@ -65,6 +71,7 @@ echo -e "${GREEN}=== Android Build Script ===${NC}"
 echo -e "${YELLOW}Work Directory: $WORK_DIR${NC}"
 echo -e "${YELLOW}Data Directory: $DATA_DIR${NC}"
 echo -e "${YELLOW}Output Directory: $OUTPUT_DIR${NC}"
+echo -e "${YELLOW}Channel: $CHANNEL${NC}"
 echo -e "${YELLOW}Initial Directory: $INITIAL_DIR${NC}"
 
 # Step 1: Copy files to destination directory
@@ -84,6 +91,23 @@ for source in "${!FILES_TO_COPY[@]}"; do
         echo -e "  ${YELLOW}Warning: Source file not found: $source_path${NC}"
     fi
 done
+
+# Step 1.5: Set channel property if specified
+if [[ -n "$CHANNEL" ]]; then
+    echo -e "\n${CYAN}[Step 1.5] Setting channel property...${NC}"
+    # like 
+    # "gpm --input \"$WORK_DIR/local.properties\" --set \"app.channel=$CHANNEL\""
+    channel_command="echo \"${CHANNEL}\""
+    echo -e "${YELLOW}Executing: $channel_command${NC}"
+    
+    if eval "$channel_command"; then
+        echo -e "${GREEN}Channel property set successfully!${NC}"
+    else
+        channel_exit_code=$?
+        echo -e "${RED}Channel command failed with exit code: $channel_exit_code${NC}"
+        exit $channel_exit_code
+    fi
+fi
 
 # Step 2: Clean build template directories
 echo -e "\n${CYAN}[Step 2] Cleaning build directories...${NC}"

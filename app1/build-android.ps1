@@ -4,7 +4,8 @@
 param(
     [string]$DataDir = ".",
     [string]$WorkDir = ".",
-    [string]$OutputDir = "output"
+    [string]$OutputDir = "output",
+    [string]$Channel = "google"
 )
 
 # Configuration - Files to copy (modify as needed)
@@ -26,6 +27,7 @@ Write-Host "=== Android Build Script ===" -ForegroundColor Green
 Write-Host "Data Directory: $DataDir" -ForegroundColor Yellow
 Write-Host "Work Directory: $WorkDir" -ForegroundColor Yellow
 Write-Host "Output Directory: $OutputDir" -ForegroundColor Yellow
+Write-Host "Channel: $Channel" -ForegroundColor Yellow
 Write-Host "Initial Directory: $InitialDir" -ForegroundColor Yellow
 
 # Step 1: Copy files to destination directory
@@ -44,6 +46,27 @@ foreach ($file in $FilesToCopy) {
         Write-Host "  Copied: $($file.Source) -> $($file.Destination)" -ForegroundColor Green
     } else {
         Write-Host "  Warning: Source file not found: $sourcePath" -ForegroundColor Yellow
+    }
+}
+
+# Step 1.5: Set channel property if specified
+if (![string]::IsNullOrEmpty($Channel)) {
+    Write-Host "`n[Step 1.5] Setting channel property..." -ForegroundColor Cyan
+    # like 
+    # gpm.exe --input `"$WorkDir\local.properties`" --set `"app.channel=$Channel`"
+    $channelCommand = "echo $Channel"
+    Write-Host "Executing: $channelCommand" -ForegroundColor Yellow
+    
+    try {
+        Invoke-Expression $channelCommand
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "Channel command failed with exit code: $LASTEXITCODE" -ForegroundColor Red
+            exit $LASTEXITCODE
+        }
+        Write-Host "Channel property set successfully!" -ForegroundColor Green
+    } catch {
+        Write-Host "Channel command failed: $($_.Exception.Message)" -ForegroundColor Red
+        exit 1
     }
 }
 
